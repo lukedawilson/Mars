@@ -1,0 +1,5 @@
+/Nasa/bin
+/Nasa/obj
+/packages
+/*.suo
+/Nasa/Views/Home/*.TMP
