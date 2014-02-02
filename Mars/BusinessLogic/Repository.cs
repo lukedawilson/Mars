@@ -1,20 +1,57 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using CsvHelper;
 using Mars.Models;
 
 namespace Mars.BusinessLogic
 {
    public class Repository
    {
-      private const string ColumnDefinitionsUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/LABEL/ACQ.FMT";
-      private const string DataUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/DATA/SOL_00000_00089/SOL00001/RME_397535244ESE00010000000ACQ____M1.TAB";
+      private const string IndexColumnDefinitionsUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/INDEX/INDEX.LBL";
+      private const string IndexDataUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/INDEX/INDEX.TAB";
+      private const string AcqColumnDefinitionsUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/LABEL/ACQ.FMT";
+      private const string AcqDataUrl = "http://atmos.nmsu.edu/PDS/data/mslrem_0001/DATA/SOL_00000_00089/SOL00001/RME_397535244ESE00010000000ACQ____M1.TAB";
 
-      public IEnumerable<ColumnDefinition> GetColumnDefinitions()
+      #region Index
+
+      public IEnumerable<IndexTable> GetIndexColumnDefinitions()
       {
-         var columnDefsRaw = WebHelpers.HttpRequestSync(ColumnDefinitionsUrl);
+         return (IEnumerable<IndexTable>)GetColumnDefinitions(IndexColumnDefinitionsUrl);
+      }
 
-         var columns = new List<ColumnDefinition>();
+      public IEnumerable<IDictionary<string, string>> GetIndexData(int? startRow = null, int? endRow = null)
+      {
+         var columnDefs = GetIndexColumnDefinitions().ToArray();
+         return GetData(IndexDataUrl, columnDefs.Single().ToArray(), startRow, endRow);
+      }
+
+      #endregion
+
+      #region Acq
+
+      public IEnumerable<ColumnDefinition> GetAcqColumnDefinitions()
+      {
+         return (IEnumerable<ColumnDefinition>)GetColumnDefinitions(AcqColumnDefinitionsUrl);
+      }
+
+      public IEnumerable<IDictionary<string, string>> GetAcqData(int? startRow = null, int? endRow = null)
+      {
+         var columnDefs = GetAcqColumnDefinitions().ToArray();
+         return GetData(AcqDataUrl, columnDefs, startRow, endRow);
+      }
+
+      #endregion
+
+      // ToDo: move into separate classes
+
+      #region Column defs parser
+
+      private object GetColumnDefinitions(string url)
+      {
+         var columnDefsRaw = WebHelpers.HttpRequestSync(url);
+
          var lines = columnDefsRaw.Split(new[] { Environment.NewLine }, StringSplitOptions.None)
                                   .Select(line => line.Trim())
                                   .Where(line => !String.IsNullOrEmpty(line))
@@ -35,7 +72,8 @@ namespace Mars.BusinessLogic
                lines[i] = new {lines[i - 1].Name, line.Value};
          }
 
-         ColumnDefinition columnDefinition = null;
+         var stack = new Stack<object>();
+         object lastPopped = null;
          for (var i = 0; i < lines.Count(); i++)
          {
             var currentLine = lines[i];
@@ -43,89 +81,152 @@ namespace Mars.BusinessLogic
             switch (currentLine.Name)
             {
                case "OBJECT":
-                  columnDefinition = new ColumnDefinition();
+                  switch (currentLine.Value.ToUpperInvariant())
+                  {
+                     case "COLUMN":
+                        CreateAndAddToParent<ColumnDefinition>(stack);
+                        break;
+                     case "INDEX_TABLE":
+                        CreateAndAddToParent<IndexTable>(stack);
+                        break;
+                  }
+
                   break;
 
                case "END_OBJECT":
-                  columns.Add(columnDefinition);
+                  lastPopped = stack.Pop();
                   break;
 
-               case "COLUMN_NUMBER":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.ColumnNumber = Int32.Parse(value);
-                  break;
-
-               case "NAME":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.Name += value;
-                  break;
-
-               case "UNIT":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.Unit += value;
-                  break;
-
-               case "DESCRIPTION":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.Description += value;
-                  break;
-
-               case "DATA_TYPE":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.DataType += value;
-                  break;
-
-               case "START_BYTE":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.StartByte = Int32.Parse(value);
-                  break;
-
-               case "BYTES":
-                  if (columnDefinition == null)
-                     throw new InvalidOperationException("Invalid syntax - field defined outside of COLUMN object");
-
-                  columnDefinition.Bytes = Int32.Parse(value);
+               default:
+                  if (stack.Any())
+                     SetValue((dynamic)stack.Peek(), currentLine.Name, value);
+                  
                   break;
             }
          }
 
-         return columns;
+         return stack.Any() ? stack.Pop() : lastPopped;
       }
 
-      public IEnumerable<IDictionary<string, string>> GetData(int? startRow = null, int? endRow = null)
+      private void SetValue(IndexTable item, string name, string value)
       {
-         var columnDefs = GetColumnDefinitions().ToArray();
-
-         var dataRaw = WebHelpers.HttpRequestSync(DataUrl);
-         var data = dataRaw.Split(new[] { Environment.NewLine }, StringSplitOptions.None)
-                           .Select(line => line.Split(',').Select(value => value.Trim()).ToArray())
-                           .ToArray();
-
-         var result = new List<IDictionary<string, string>>();
-         for (var i = startRow ?? 0; i < (endRow ?? data.Length); i++)
+         switch (name)
          {
-            var row = data[i];
-            var dr = new Dictionary<string, string>();
+            case "INTERCHANGE_FORMAT":
+               item.InterchangeFormat = value;
+               break;
 
-            for (var j = 0; j < row.Count(); j++)
-               dr.Add(columnDefs[j].Name, row[j]);
+            case "ROW_BYTES":
+               item.RowBytes = int.Parse(value);
+               break;
 
-            result.Add(dr);
+            case "ROWS":
+               item.Rows = int.Parse(value);
+               break;
+
+            case "COLUMNS":
+               item.Columns = int.Parse(value);
+               break;
+
+            case "INDEX_TYPE":
+               item.IndexType = value;
+               break;
+         }
+      }
+
+      private void SetValue(ColumnDefinition item, string name, string value)
+      {
+         switch (name)
+         {
+            case "COLUMN_NUMBER":
+               item.ColumnNumber = Int32.Parse(value);
+               break;
+
+            case "NAME":
+               item.Name += value;
+               break;
+
+            case "UNIT":
+               item.Unit += value;
+               break;
+
+            case "DESCRIPTION":
+               item.Description += value;
+               break;
+
+            case "DATA_TYPE":
+               item.DataType += value;
+               break;
+
+            case "START_BYTE":
+               item.StartByte = Int32.Parse(value);
+               break;
+
+            case "BYTES":
+               item.Bytes = Int32.Parse(value);
+               break;
+         }
+      }
+
+      private void CreateAndAddToParent<TChild>(Stack<object> stack) where TChild : new()
+      {
+         var child = new TChild();
+
+         if (!stack.Any()) // no root element specified
+            stack.Push(new List<TChild>());
+
+         AddToParent((dynamic)stack.Peek(), (dynamic)child);
+         stack.Push(child);
+      }
+      
+      private void AddToParent(ICollection<ColumnDefinition> parent, ColumnDefinition child)
+      {
+         parent.Add(child);
+      }
+
+      private void AddToParent(ICollection<IndexTable> parent, IndexTable child)
+      {
+         parent.Add(child);
+      }
+
+      #endregion
+
+      #region Data parser
+
+      private static IEnumerable<IDictionary<string, string>> GetData(string url, ColumnDefinition[] columnDefs, int? startRow = null, int? endRow = null)
+      {
+         var dataRaw = WebHelpers.HttpRequestSync(url);
+         var result = new List<IDictionary<string, string>>();
+         using (var stringReader = new StringReader(dataRaw))
+         {
+            using (var reader = new CsvReader(stringReader))
+            {
+               var i = 0;
+               while (reader.Read())
+               {
+                  if (endRow.HasValue && i >= endRow)
+                     break;
+
+                  if (startRow.HasValue && i < startRow)
+                     continue;
+
+                  var outputRow = new Dictionary<string, string>();
+                  for (var j = 0; j < Math.Min(reader.FieldHeaders.Length, columnDefs.Count()); j++)
+                  {
+                     var column = columnDefs[j].Name;
+                     var value = reader.GetField(j).Trim();
+                     outputRow.Add(column, value);
+                  }
+
+                  result.Add(outputRow);
+                  i++;
+               }
+            }
          }
 
          return result;
       }
+
+      #endregion
    }
 }

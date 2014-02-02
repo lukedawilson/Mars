@@ -14,7 +14,7 @@ namespace Mars
 
          config.Routes.MapHttpRoute(
              name: "DefaultApi",
-             routeTemplate: "api/{controller}/{id}",
+             routeTemplate: "api/{controller}/{dataset}",
              defaults: new { id = RouteParameter.Optional }
          );
 
