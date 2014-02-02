@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Web.Http;
 using Mars.BusinessLogic;
 using Mars.Models;
@@ -11,7 +10,7 @@ namespace Mars.Controllers
       private readonly Repository _repository = new Repository();
 
       // GET api/columnDefinitions
-      public IEnumerable<object> Get(string dataset, int? startRow = null, int? endRow = null)
+      public object Get(string dataset, int? startRow = null, int? endRow = null)
       {
          switch (dataset.AsEnum<Dataset>())
          {

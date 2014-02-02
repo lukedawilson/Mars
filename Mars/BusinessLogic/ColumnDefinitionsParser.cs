@@ -79,11 +79,11 @@ namespace Mars.BusinessLogic
                break;
 
             case "ROWS":
-               item.Rows = int.Parse(value);
+               item.RowCount = int.Parse(value);
                break;
 
             case "COLUMNS":
-               item.Columns = int.Parse(value);
+               item.ColumnCount = int.Parse(value);
                break;
 
             case "INDEX_TYPE":
@@ -138,6 +138,11 @@ namespace Mars.BusinessLogic
       }
 
       private static void AddToParent(ICollection<ColumnDefinition> parent, ColumnDefinition child)
+      {
+         parent.Add(child);
+      }
+      
+      private static void AddToParent(IndexTable parent, ColumnDefinition child)
       {
          parent.Add(child);
       }

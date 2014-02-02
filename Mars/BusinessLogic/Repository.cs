@@ -26,7 +26,7 @@ namespace Mars.BusinessLogic
 
       public IEnumerable<IDictionary<string, string>> GetIndexData(int? startRow = null, int? endRow = null)
       {
-         var columnDefs = GetIndexColumnDefinitions().ToArray();
+         var columnDefs = GetIndexColumnDefinitions().Columns.ToArray();
          return GetData(IndexDataUrl, columnDefs, startRow, endRow);
       }
 
