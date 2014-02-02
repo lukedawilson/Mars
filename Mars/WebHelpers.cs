@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Net;
 
-namespace Mars.Controllers
+namespace Mars
 {
    public static class WebHelpers
    {

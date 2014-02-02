@@ -1,6 +1,6 @@
-namespace Mars.Controllers
+namespace Mars.Models
 {
-   public class Column
+   public class ColumnDefinition
    {
       public int ColumnNumber { get; set; }
       public string Name { get; set; }
