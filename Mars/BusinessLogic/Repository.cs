@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using CsvHelper;
 using Mars.Models;
@@ -20,8 +19,10 @@ namespace Mars.BusinessLogic
 
       public IndexTable GetIndexColumnDefinitions()
       {
-         var columnDefsRaw = WebHelpers.HttpRequestSync(IndexColumnDefinitionsUrl);
-         return _columnDefinitionsParser.Parse<IndexTable>(columnDefsRaw).Single();
+         using (var stream = WebHelpers.HttpRequest(IndexColumnDefinitionsUrl))
+         {
+            return _columnDefinitionsParser.Parse<IndexTable>(stream.ReadToEnd()).Single();
+         }
       }
 
       public IEnumerable<IDictionary<string, string>> GetIndexData(int? startRow = null, int? endRow = null)
@@ -36,8 +37,10 @@ namespace Mars.BusinessLogic
 
       public IEnumerable<ColumnDefinition> GetAcqColumnDefinitions()
       {
-         var columnDefsRaw = WebHelpers.HttpRequestSync(AcqColumnDefinitionsUrl);
-         return _columnDefinitionsParser.Parse<ColumnDefinition>(columnDefsRaw);
+         using (var stream = WebHelpers.HttpRequest(AcqColumnDefinitionsUrl))
+         {
+            return _columnDefinitionsParser.Parse<ColumnDefinition>(stream.ReadToEnd());
+         }
       }
 
       public IEnumerable<IDictionary<string, string>> GetAcqData(int? startRow = null, int? endRow = null)
@@ -54,11 +57,10 @@ namespace Mars.BusinessLogic
 
       private static IEnumerable<IDictionary<string, string>> GetData(string url, ColumnDefinition[] columnDefs, int? startRow = null, int? endRow = null)
       {
-         var dataRaw = WebHelpers.HttpRequestSync(url);
          var result = new List<IDictionary<string, string>>();
-         using (var stringReader = new StringReader(dataRaw))
+         using (var stream = WebHelpers.HttpRequest(url))
          {
-            using (var reader = new CsvReader(stringReader))
+            using (var reader = new CsvReader(stream))
             {
                var i = 0;
                while (reader.Read())

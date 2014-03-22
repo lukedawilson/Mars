@@ -138,10 +138,11 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="BusinessLogic\ColumnDefinitionsParser.cs" />
     <Compile Include="Controllers\ColumnDefinitionsController.cs" />
+    <Compile Include="Controllers\IndexController.cs" />
     <Compile Include="Models\ColumnDefinition.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="BusinessLogic\Repository.cs" />
-    <Compile Include="Controllers\ValuesController.cs" />
+    <Compile Include="Controllers\AcqController.cs" />
     <Compile Include="Models\Dataset.cs" />
     <Compile Include="Models\IndexTable.cs" />
     <Compile Include="WebHelpers.cs" />

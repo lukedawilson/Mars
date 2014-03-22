@@ -11,9 +11,12 @@ namespace Mars.Controllers
          return View();
       }
 
-      public string HttpRequestSync(string url)
+      public string HttpRequest(string url)
       {
-         return WebHelpers.HttpRequestSync(url);
+         using (var stream = WebHelpers.HttpRequest(url))
+         {
+            return stream.ReadToEnd();
+         }
       }
    }
 }

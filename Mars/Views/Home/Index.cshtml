@@ -26,7 +26,7 @@
    google.load('visualization', '1.0', { 'packages': ['corechart'] });
    google.setOnLoadCallback(function() {
       $.ajax({
-         url: "@Url.Action("HttpRequestSync", new { url = "http://localhost:50367/api/values/acq" })"
+         url: "@Url.Action("HttpRequest", new { url = "http://localhost:50367/api/acq/data?startRow=0&endRow=10" })"
       }).success(renderChart);
    });
 </script>
