@@ -1,5 +1,7 @@
-/Nasa/bin
-/Nasa/obj
+/Mars/bin
+/Mars/obj
 /packages
 /*.suo
-/Nasa/Views/Home/*.TMP
+/Mars/*.user
+/*.user
+/Mars/Views/Home/*.TMP
