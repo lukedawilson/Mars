@@ -4,23 +4,18 @@ using System.Net.Http;
 using System.Net.Http.Formatting;
 using System.Web.Http;
 using Mars.BusinessLogic;
+using Mars.Models;
 
 namespace Mars.Controllers
 {
-   public class Page
-   {
-      public int? StartRow { get; set; }
-      public int? EndRow { get; set; }
-   }
-
    public class AcqController : ApiController
    {
       private readonly Repository _repository = new Repository();
 
       [HttpGet]
-      public HttpResponseMessage Data([FromUri]Page page)
+      public HttpResponseMessage Get([FromUri]DataRequestModel request)
       {
-         var data = _repository.GetAcqData(page.StartRow, page.EndRow);
+         var data = _repository.GetAcqData(request.StartRow, request.EndRow);
          var content = new ObjectContent(typeof(IEnumerable<IDictionary<string, string>>), data, new JsonMediaTypeFormatter());
          return new HttpResponseMessage(HttpStatusCode.OK) { Content = content };
       }

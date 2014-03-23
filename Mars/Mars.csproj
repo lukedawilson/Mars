@@ -143,6 +143,7 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="BusinessLogic\Repository.cs" />
     <Compile Include="Controllers\AcqController.cs" />
+    <Compile Include="Models\DataRequestModel.cs" />
     <Compile Include="Models\Dataset.cs" />
     <Compile Include="Models\IndexTable.cs" />
     <Compile Include="WebHelpers.cs" />
