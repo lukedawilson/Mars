@@ -7,7 +7,7 @@ namespace Mars.BusinessLogic
 {
    public class ColumnDefinitionsParser
    {
-      public IEnumerable<TItem> Parse<TItem>(string columnDefsRaw)
+      public IEnumerable<TRootElement> Parse<TRootElement>(string columnDefsRaw)
       {
          var lines = columnDefsRaw.Split(new[] { Environment.NewLine }, StringSplitOptions.None)
             .Select(line => line.Trim())
@@ -63,7 +63,7 @@ namespace Mars.BusinessLogic
          }
 
          var topOfStack = stack.Any() ? stack.Pop() : lastPopped;
-         return (IEnumerable<TItem>)topOfStack;
+         return (IEnumerable<TRootElement>)topOfStack;
       }
 
       private static void SetValue(IndexTable item, string name, string value)

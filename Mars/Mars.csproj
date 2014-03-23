@@ -137,6 +137,8 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="BusinessLogic\ColumnDefinitionsParser.cs" />
+    <Compile Include="BusinessLogic\DataPoint.cs" />
+    <Compile Include="BusinessLogic\TabulatedDataParser.cs" />
     <Compile Include="Controllers\ColumnDefinitionsController.cs" />
     <Compile Include="Controllers\IndexController.cs" />
     <Compile Include="Models\ColumnDefinition.cs" />
