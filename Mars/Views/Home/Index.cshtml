@@ -1,6 +1,6 @@
 ﻿<script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript">
-
+   
    function renderChart(data) {
       var dataTable = new window.google.visualization.DataTable();
       dataTable.addColumn('number', 'Time stamp');
@@ -12,23 +12,57 @@
          dataTable.addRow([timestamp, b2AirTemp]);
       });
 
-      var chartOptions = {
+      var options = {
          title: 'Boom 2 air temperature vs. Time',
          hAxis: { title: 'Time stamp' },
          vAxis: { title: 'Boom 2 air temperature' },
          legend: 'Boom 2 air temperature'
       };
 
-      var chart = new window.google.visualization.ScatterChart($('#chart')[0]);
-      chart.draw(dataTable, chartOptions);
+      var chart = new window.google.visualization.ScatterChart($('#acqChart')[0]);
+      chart.draw(dataTable, options);
    }
 
-   google.load('visualization', '1.0', { 'packages': ['corechart'] });
+   function renderTable(data) {
+      var json = JSON.parse(data);
+      var dataTable = new window.google.visualization.DataTable();
+
+      for (var field in json[0]) {
+         dataTable.addColumn('string', field);
+      }
+
+      json.forEach(function (rowData) {
+         var row = [];
+         for (var column in rowData) {
+            row.push(rowData[column]);
+         };
+         dataTable.addRow(row);
+      });
+
+      var options = {
+         showRowNumber: true,
+         page: 'enable',
+         pageSize: 10,
+         width: '100%'
+      }
+      
+      var table = new window.google.visualization.Table($('#indexTable')[0]);
+      table.draw(dataTable, options);
+   }
+
+   google.load('visualization', '1.0', { 'packages': ['corechart', 'table'] });
    google.setOnLoadCallback(function() {
       $.ajax({
-         url: "@Url.Action("HttpRequest", new { url = "http://localhost:50367/api/acq" })"
-      }).success(renderChart);
+         url: "@Url.Action("HttpRequest", new { url = "http://localhost:50367/api/acq/?endRow=500" })"
+      }).success(function(data) {
+         renderChart(data);
+
+         $.ajax({
+            url: "@Url.Action("HttpRequest", new { url = "http://localhost:50367/api/index/?endRow=100" })"
+         }).success(renderTable);
+      });
    });
 </script>
 
-<div id="chart"></div>
+<div id="acqChart"></div>
+<div id="indexTable"></div>
